@@ -17,14 +17,10 @@ export class AuthController {
     return this.authService.registerUsers(dto);
   }
 
-  // @Post('login')
-  // login(@Body() dto: UserLoginDTO) {
-  //   console.log(dto);
-  //   // return this.authService.loginUser(dto);
-    
-  //   return;
-  // }
+  
 
+  @ApiTags('API')
+  @ApiResponse({status: 200, type: AuthUserResponse})
   @Post("login")
   login(@Body() dto: UserLoginDTO): Promise<AuthUserResponse> {
     return this.authService.loginUser(dto);
