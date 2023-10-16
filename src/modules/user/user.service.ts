@@ -7,11 +7,13 @@ import { AppController } from 'src/app.controller';
 import { AppError } from 'src/common/errors';
 import { AuthUserResponse } from '../auth/response';
 import { Watchlist } from '../watchlist/models/watchlist.module';
+import { TokenService } from 'src/token/token.service';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(User) private readonly userRepository: typeof User,
+    private readonly tokenService: TokenService
   ) {}
 
   async hashPassword(password: string): Promise<string> {
@@ -22,8 +24,15 @@ export class UserService {
     }
   }
 
-  async findUserByEmail(email: string) {
-    return await this.userRepository.findOne({ where: { email: email } });
+  async findUserByEmail(email: string): Promise<User> {
+    try {
+      return this.userRepository.findOne({ where: { email: email }, include: {
+          model: Watchlist,
+          required: false,
+        } });
+    }catch (e) {
+      throw new Error(e)
+    }
   }
 
   async createUser(dto: CreateUserDTO): Promise<CreateUserDTO> {
@@ -42,33 +51,33 @@ export class UserService {
     }
   }
 
-//   async publicUser (email: string): Promise<AuthUserResponse>{
-//     try {
-//       const user = await this.userRepository.findOne({
-//         where: {email},
-//         attributes: {exclude: ['password']},
-//         include: {
-//           model: Watchlist,
-//           required: false
-//         }
-//       })
-//       const token = await this.tokenService.generateJwtToken(user)
-//       return { user, token}
-//     }catch (e) {
-//       throw new Error(e)
-//     }
-//   }
-
-async publicUser (email: string) {
-  return await this.userRepository.findOne({
-    where: {email},
-    attributes: {exclude: ['password']},
-    include: {
-      model: Watchlist,
-      required: false
+  async publicUser (email: string): Promise<AuthUserResponse>{
+    try {
+      const user = await this.userRepository.findOne({
+        where: {email},
+        attributes: {exclude: ['password']},
+        include: {
+          model: Watchlist,
+          required: false
+        }
+      })
+      const token = await this.tokenService.generateJwtToken(user)
+      return { user, token}
+    }catch (e) {
+      throw new Error(e)
     }
-  })
-}
+  }
+
+// async publicUser (email: string) {
+//   return await this.userRepository.findOne({
+//     where: {email},
+//     attributes: {exclude: ['password']},
+//     include: {
+//       model: Watchlist,
+//       required: false
+//     }
+//   })
+// }
 
   async updateUser (email: string, dto: UpdateUserDTO): Promise<UpdateUserDTO> {
     await this.userRepository.update(dto, {where: {email}})
